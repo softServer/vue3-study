@@ -1,11 +1,14 @@
-import api from '../axios'
+import api from '../request'
 import urls from './urls'
 
-const header = {}
+// const header = {}
 
 export default {
-  userRegist (params) {
+  userRegist (data) {
     // return出去了一个promise
-    return api.get(urls.matches, params, header)
+    return api.get(urls.regist, data)
+  },
+  passwdLogin (data) {
+    return api.post(urls.passwdLogin, data)
   }
 }

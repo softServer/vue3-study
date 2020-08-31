@@ -1,5 +1,5 @@
-import user from './user'
+import userApi from './user'
 
 export default {
-  user
+  userApi
 }

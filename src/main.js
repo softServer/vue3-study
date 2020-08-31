@@ -1,5 +1,9 @@
-import { Vue, createApp } from 'vue'
+import { createApp } from 'vue'
 import App from './App.vue'
-import api from './api/install'
-Vue.use(api)
-createApp(App).mount('#app')
+import router from './router'
+import store from './store'
+
+createApp(App)
+  .use(store)
+  .use(router)
+  .mount('#app')

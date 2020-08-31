@@ -1,5 +1,6 @@
-import baseUrl from '../baseUrl'
 
 export default {
-  regist: baseUrl + '/regist'
+  regist: '/user/regist',
+  userInfo: '/user/',
+  passwdLogin: '/login/loginbypasswd'
 }

@@ -1,86 +1,72 @@
 // axios 接口请求服务
 // 配置API接口地址
-var root = 'https://cnodejs.org/api/v1'
+import baseUrl from './baseUrl'
 // 引用axios
-var axios = require('axios')
-// 自定义判断元素类型JS
-function toType (obj) {
-  return ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase()
-}
+const axios = require('axios')
 
-// 参数过滤函数
-function filterNull (o) {
-  for (var key in o) {
-    if (o[key] === null) {
-      delete o[key]
+// 创建 axios 实例
+const service = axios.create({
+  // API 请求的默认前缀
+  baseURL: baseUrl,
+  timeout: 6000 // 请求超时时间
+})
+// 设置 post、put 默认 Content-Type
+service.defaults.headers.post['Content-Type'] = 'application/json'
+service.defaults.headers.put['Content-Type'] = 'application/json'
+// 添加请求拦截器
+service.interceptors.request.use(
+  (config) => {
+    if (config.method === 'post' || config.method === 'put') {
+      // post、put 提交时，将对象转换为string, 为处理Java后台解析问题
+      config.data = JSON.stringify(config.data)
     }
-    if (toType(o[key]) === 'string') {
-      o[key] = o[key].trim()
-    } else if (toType(o[key]) === 'object') {
-      o[key] = filterNull(o[key])
-    } else if (toType(o[key]) === 'array') {
-      o[key] = filterNull(o[key])
-    }
+    // 请求发送前进行处理 token
+    return config
+  },
+  (error) => {
+    // 请求错误处理
+    return Promise.reject(error)
   }
-  return o
-}
-/*
-  接口处理函数
-  这个函数每个项目都是不一样的，我现在调整的是适用于
-  https://cnodejs.org/api/v1 的接口，如果是其他接口
-  需要根据接口的参数进行调整。参考说明文档地址：
-  https://cnodejs.org/topic/5378720ed6e2d16149fa16bd
-  主要是，不同的接口的成功标识和失败提示是不一致的。
-  另外，不同的项目的处理方法也是不一致的，这里出错就是简单的alert
-*/
+)
 
-function apiAxios (method, url, params, header) {
-  if (params) {
-    params = filterNull(params)
-  }
-  if (header == null) {
-    header = {
-      'Content-Type': 'application/json'
+// 添加响应拦截器
+service.interceptors.response.use(
+  (response) => {
+    console.log('axios response:', response)
+    const { data, headers } = response
+    console.log('axios headers:', headers)
+    console.log('axios data:', data)
+    if (data.flag === true) {
+      return data.data
+    } else {
+      window.alert('error: ' + JSON.stringify(data))
+      return data
     }
-  }
-  axios({
-    method: method,
-    url: url,
-    data: method === 'POST' || method === 'PUT' ? params : null,
-    params: method === 'GET' || method === 'DELETE' ? params : null,
-    baseURL: root,
-    headers: header,
-    withCredentials: false
-  })
-    .then(function (res) {
-      if (res.data.success === true) {
-        return res.data
-      } else {
-        window.alert('error: ' + JSON.stringify(res.data))
-        return res.data
+  },
+  (error) => {
+    let info = {}
+
+    if (!error.response) {
+      info = {
+        code: 5000,
+        msg: 'Network Error'
       }
-    })
-    .catch(function (err) {
-      const res = err.response
-      if (err) {
-        window.alert('api error, HTTP CODE: ' + res.status)
+    } else {
+      // 此处整理错误信息格式
+      info = {
+        code: error.response.status,
+        data: error.response.data,
+        msg: error.response.statusText
       }
-      return res
-    })
-}
-
-// 返回在vue模板中的调用接口
-export default {
-  get: function (url, params, header) {
-    return apiAxios('GET', url, params, header)
-  },
-  post: function (url, params, header) {
-    return apiAxios('POST', url, params, header)
-  },
-  put: function (url, params, header) {
-    return apiAxios('PUT', url, params, header)
-  },
-  delete: function (url, params, header) {
-    return apiAxios('DELETE', url, params, header)
+    }
+    return info
   }
+)
+
+/**
+ * 创建统一封装过的 axios 实例
+ * @return {AxiosInstance}
+ */
+export default function () {
+  return service
 }
